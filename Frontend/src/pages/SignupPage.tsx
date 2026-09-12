@@ -1,8 +1,5 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '../components/ui/card.js';
-import { Input } from '../components/ui/input.js';
-import { Button } from '../components/ui/button.js';
 import { api } from '../services/api.js';
 import { useAppDispatch } from '../redux/hooks.js';
 import { setCredentials } from '../redux/slices/authSlice.js';
@@ -46,73 +43,83 @@ const SignupPage = () => {
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-slate-50 p-4">
-      <Card className="w-full max-w-md shadow-md">
-        <CardHeader className="space-y-1 text-center">
-          <CardTitle className="text-2xl font-bold">Create an account</CardTitle>
-          <CardDescription>Enter your details below to create your account</CardDescription>
-        </CardHeader>
-        <form onSubmit={handleSubmit}>
-          <CardContent className="space-y-4">
-            {error && (
-              <div className="rounded-md bg-red-50 p-3 text-sm text-red-600 border border-red-200">
-                {error}
-              </div>
-            )}
-            <div className="space-y-1">
-              <label className="text-sm font-medium text-slate-700">Full Name</label>
-              <Input
-                type="text"
-                placeholder="John Doe"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                required
-              />
-            </div>
-            <div className="space-y-1">
-              <label className="text-sm font-medium text-slate-700">Email</label>
-              <Input
-                type="email"
-                placeholder="name@example.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-              />
-            </div>
-            <div className="space-y-1">
-              <label className="text-sm font-medium text-slate-700">Password</label>
-              <Input
-                type="password"
-                placeholder="•••••••• (min 6 characters)"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-              />
-            </div>
-            <div className="space-y-1">
-              <label className="text-sm font-medium text-slate-700">Role</label>
-              <select
-                className="flex h-9 w-full rounded-md border border-slate-300 bg-white px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
-                value={role}
-                onChange={(e) => setRole(e.target.value as 'user' | 'admin')}
-              >
-                <option value="user">User (Manage own tasks)</option>
-                <option value="admin">Admin (Manage all tasks)</option>
-              </select>
-            </div>
-          </CardContent>
-          <CardFooter className="flex flex-col space-y-3">
-            <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? 'Creating account...' : 'Sign Up'}
-            </Button>
-            <p className="text-center text-sm text-slate-500">
-              Already have an account?{' '}
-              <Link to="/login" className="text-blue-600 hover:underline font-medium">
-                Sign in
-              </Link>
-            </p>
-          </CardFooter>
+      <div className="w-full max-w-md rounded-xl border border-slate-200 bg-white p-8 shadow-md">
+        <div className="mb-6 text-center">
+          <h2 className="text-2xl font-bold text-slate-800">Create an account</h2>
+          <p className="mt-1 text-sm text-slate-500">Enter your details below to create your account</p>
+        </div>
+
+        {error && (
+          <div className="mb-4 rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-600">
+            {error}
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Full Name</label>
+            <input
+              type="text"
+              placeholder="John Doe"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              required
+              className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Email</label>
+            <input
+              type="email"
+              placeholder="name@example.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Password</label>
+            <input
+              type="password"
+              placeholder="•••••••• (min 6 characters)"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Role</label>
+            <select
+              value={role}
+              onChange={(e) => setRole(e.target.value as 'user' | 'admin')}
+              className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            >
+              <option value="user">User (Manage own tasks)</option>
+              <option value="admin">Admin (Manage all tasks)</option>
+            </select>
+          </div>
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full cursor-pointer rounded-md bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 transition-colors"
+          >
+            {loading ? 'Creating account...' : 'Sign Up'}
+          </button>
         </form>
-      </Card>
+
+        <p className="mt-6 text-center text-sm text-slate-500">
+          Already have an account?{' '}
+          <Link to="/login" className="font-semibold text-blue-600 hover:underline">
+            Sign in
+          </Link>
+        </p>
+      </div>
     </div>
   );
 };

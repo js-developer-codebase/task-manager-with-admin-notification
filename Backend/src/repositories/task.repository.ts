@@ -17,13 +17,62 @@ export interface PaginatedTasksResult {
   totalPages: number;
 }
 
-const create = async (taskData: Partial<ITask>): Promise<ITask> => {
-  const task = new Task(taskData);
-  return await task.save();
+/**
+ * Common aggregation projection pipeline stage for joining User details
+ */
+const getUserLookupStages = (): PipelineStage[] => [
+  {
+    $lookup: {
+      from: 'users',
+      localField: 'userId',
+      foreignField: '_id',
+      as: 'userDetails',
+    },
+  },
+  {
+    $unwind: {
+      path: '$userDetails',
+      preserveNullAndEmptyArrays: true,
+    },
+  },
+  {
+    $project: {
+      _id: 1,
+      title: 1,
+      description: 1,
+      status: 1,
+      userId: 1,
+      createdAt: 1,
+      updatedAt: 1,
+      user: {
+        _id: '$userDetails._id',
+        name: '$userDetails.name',
+        email: '$userDetails.email',
+      },
+    },
+  },
+];
+
+/**
+ * Find single task by ID using MongoDB Aggregation Pipeline ($match + $lookup + $unwind + $project)
+ */
+const findById = async (id: string): Promise<any | null> => {
+  const pipeline: PipelineStage[] = [
+    { $match: { _id: new Types.ObjectId(id) } },
+    ...getUserLookupStages(),
+  ];
+
+  const [task] = await Task.aggregate(pipeline);
+  return task || null;
 };
 
-const findById = async (id: string): Promise<ITask | null> => {
-  return await Task.findById(id);
+/**
+ * Create task and return full joined task document using Aggregation Pipeline
+ */
+const create = async (taskData: Partial<ITask>): Promise<any> => {
+  const task = new Task(taskData);
+  const savedTask = await task.save();
+  return await findById(savedTask._id.toString());
 };
 
 /**
@@ -51,36 +100,7 @@ const findWithAggregation = async (options: TaskFilterOptions): Promise<Paginate
 
   const pipeline: PipelineStage[] = [
     { $match: matchConditions },
-    {
-      $lookup: {
-        from: 'users',
-        localField: 'userId',
-        foreignField: '_id',
-        as: 'userDetails',
-      },
-    },
-    {
-      $unwind: {
-        path: '$userDetails',
-        preserveNullAndEmptyArrays: true,
-      },
-    },
-    {
-      $project: {
-        _id: 1,
-        title: 1,
-        description: 1,
-        status: 1,
-        userId: 1,
-        createdAt: 1,
-        updatedAt: 1,
-        user: {
-          _id: '$userDetails._id',
-          name: '$userDetails.name',
-          email: '$userDetails.email',
-        },
-      },
-    },
+    ...getUserLookupStages(),
     {
       $facet: {
         data: [
@@ -111,7 +131,7 @@ const findWithAggregation = async (options: TaskFilterOptions): Promise<Paginate
 };
 
 /**
- * Aggregation pipeline to calculate task status summary/statistics
+ * Aggregation pipeline to calculate task status summary/statistics ($match + $group)
  */
 const getTaskStats = async (userId?: string): Promise<{ [key: string]: number }> => {
   const matchConditions: Record<string, any> = {};
@@ -144,11 +164,16 @@ const getTaskStats = async (userId?: string): Promise<{ [key: string]: number }>
   return result;
 };
 
-const updateById = async (id: string, updateData: Partial<ITask>): Promise<ITask | null> => {
-  return await Task.findByIdAndUpdate(id, updateData, {
+/**
+ * Update task by ID and return updated document with Aggregation Pipeline
+ */
+const updateById = async (id: string, updateData: Partial<ITask>): Promise<any> => {
+  await Task.findByIdAndUpdate(id, updateData, {
     new: true,
     runValidators: true,
   });
+
+  return await findById(id);
 };
 
 const deleteById = async (id: string): Promise<ITask | null> => {

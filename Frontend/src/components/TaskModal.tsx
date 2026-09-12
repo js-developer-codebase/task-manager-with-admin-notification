@@ -1,7 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { Card, CardHeader, CardTitle, CardContent, CardFooter } from './ui/card.js';
-import { Input } from './ui/input.js';
-import { Button } from './ui/button.js';
 import type { Task, TaskStatus } from '../redux/slices/taskSlice.js';
 
 interface TaskModalProps {
@@ -54,60 +51,73 @@ const TaskModal = ({ isOpen, task, onClose, onSave }: TaskModalProps) => {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <Card className="w-full max-w-lg shadow-xl">
-        <CardHeader>
-          <CardTitle>{task ? 'Edit Task' : 'Create New Task'}</CardTitle>
-        </CardHeader>
-        <form onSubmit={handleSubmit}>
-          <CardContent className="space-y-4">
-            {error && (
-              <div className="rounded-md bg-red-50 p-3 text-sm text-red-600 border border-red-200">
-                {error}
-              </div>
-            )}
-            <div className="space-y-1">
-              <label className="text-sm font-medium text-slate-700">Task Title *</label>
-              <Input
-                type="text"
-                placeholder="e.g. Implement real-time notifications"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                required
-              />
-            </div>
-            <div className="space-y-1">
-              <label className="text-sm font-medium text-slate-700">Description</label>
-              <textarea
-                className="flex min-h-[80px] w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm shadow-sm placeholder:text-slate-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
-                placeholder="Add more details about this task..."
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                rows={3}
-              />
-            </div>
-            <div className="space-y-1">
-              <label className="text-sm font-medium text-slate-700">Status</label>
-              <select
-                className="flex h-9 w-full rounded-md border border-slate-300 bg-white px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
-                value={status}
-                onChange={(e) => setStatus(e.target.value as TaskStatus)}
-              >
-                <option value="Pending">Pending</option>
-                <option value="In Progress">In Progress</option>
-                <option value="Completed">Completed</option>
-              </select>
-            </div>
-          </CardContent>
-          <CardFooter className="flex justify-end space-x-2">
-            <Button type="button" variant="outline" onClick={onClose} disabled={loading}>
+      <div className="w-full max-w-lg rounded-xl border border-slate-200 bg-white p-6 shadow-xl">
+        <h3 className="text-xl font-bold text-slate-900 mb-4">
+          {task ? 'Edit Task' : 'Create New Task'}
+        </h3>
+
+        {error && (
+          <div className="mb-4 rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-600">
+            {error}
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Task Title *</label>
+            <input
+              type="text"
+              placeholder="e.g. Implement real-time notifications"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              required
+              className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Description</label>
+            <textarea
+              placeholder="Add more details about this task..."
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              rows={3}
+              className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Status</label>
+            <select
+              value={status}
+              onChange={(e) => setStatus(e.target.value as TaskStatus)}
+              className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            >
+              <option value="Pending">Pending</option>
+              <option value="In Progress">In Progress</option>
+              <option value="Completed">Completed</option>
+            </select>
+          </div>
+
+          <div className="mt-6 flex justify-end space-x-3 pt-2">
+            <button
+              type="button"
+              onClick={onClose}
+              disabled={loading}
+              className="cursor-pointer rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors"
+            >
               Cancel
-            </Button>
-            <Button type="submit" disabled={loading}>
+            </button>
+            <button
+              type="submit"
+              disabled={loading}
+              className="cursor-pointer rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50 transition-colors"
+            >
               {loading ? 'Saving...' : task ? 'Update Task' : 'Create Task'}
-            </Button>
-          </CardFooter>
+            </button>
+          </div>
         </form>
-      </Card>
+      </div>
     </div>
   );
 };
