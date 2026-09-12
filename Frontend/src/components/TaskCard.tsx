@@ -43,10 +43,12 @@ const TaskCard = ({ task, onEdit, onDelete }: TaskCardProps) => {
       <div className="mt-4 border-t border-slate-100 pt-3">
         <div className="flex items-center justify-between text-xs text-slate-400">
           <span>
-            {new Date(task.createdAt).toLocaleDateString(undefined, {
+            {new Date(task.createdAt).toLocaleString(undefined, {
               month: 'short',
               day: 'numeric',
               year: 'numeric',
+              hour: '2-digit',
+              minute: '2-digit',
             })}
           </span>
           {task.user?.name && (

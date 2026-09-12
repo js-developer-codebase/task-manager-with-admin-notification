@@ -28,16 +28,27 @@ const DashboardPage = () => {
   const { user } = useAppSelector((state) => state.auth);
   const { tasks, stats, pagination, loading, error } = useAppSelector((state) => state.tasks);
 
-  const [search, setSearch] = useState('');
+  const [searchInput, setSearchInput] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [modalOpen, setModalOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
 
+  // Debounce search query by 400ms to minimize network requests
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchInput);
+      setCurrentPage(1);
+    }, 400);
+
+    return () => clearTimeout(timer);
+  }, [searchInput]);
+
   const loadTasks = useCallback(async () => {
     try {
       dispatch(setTaskLoading(true));
-      const res = await api.getTasks(currentPage, 9, statusFilter, search);
+      const res = await api.getTasks(currentPage, 9, statusFilter, debouncedSearch);
       dispatch(
         setTasks({
           tasks: res.data,
@@ -47,7 +58,7 @@ const DashboardPage = () => {
     } catch (err: any) {
       dispatch(setTaskError(err.message || 'Failed to fetch tasks'));
     }
-  }, [currentPage, statusFilter, search, dispatch]);
+  }, [currentPage, statusFilter, debouncedSearch, dispatch]);
 
   const loadStats = useCallback(async () => {
     try {
@@ -119,12 +130,9 @@ const DashboardPage = () => {
 
         {/* Action Controls & Search */}
         <TaskFilters
-          search={search}
+          search={searchInput}
           status={statusFilter}
-          onSearchChange={(value) => {
-            setSearch(value);
-            setCurrentPage(1);
-          }}
+          onSearchChange={(value) => setSearchInput(value)}
           onStatusChange={(value) => {
             setStatusFilter(value);
             setCurrentPage(1);

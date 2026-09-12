@@ -18,7 +18,7 @@ const TaskFilters = ({
       <div className="flex flex-1 items-center gap-3">
         <input
           type="text"
-          placeholder="Search tasks by title..."
+          placeholder="Search by title or user..."
           value={search}
           onChange={(e) => onSearchChange(e.target.value)}
           className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 sm:max-w-xs"

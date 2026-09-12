@@ -84,36 +84,50 @@ const findWithAggregation = async (options: TaskFilterOptions): Promise<Paginate
   const limit = Math.max(1, Number(options.limit) || 10);
   const skip = (page - 1) * limit;
 
-  const matchConditions: Record<string, any> = {};
+  const baseMatch: Record<string, any> = {};
 
   if (options.userId) {
-    matchConditions.userId = new Types.ObjectId(options.userId);
+    baseMatch.userId = new Types.ObjectId(options.userId);
   }
 
   if (options.status) {
-    matchConditions.status = options.status;
+    baseMatch.status = options.status;
   }
 
-  if (options.search) {
-    matchConditions.title = { $regex: options.search, $options: 'i' };
+  const pipeline: PipelineStage[] = [];
+
+  if (Object.keys(baseMatch).length > 0) {
+    pipeline.push({ $match: baseMatch });
   }
 
-  const pipeline: PipelineStage[] = [
-    { $match: matchConditions },
-    ...getUserLookupStages(),
-    {
-      $facet: {
-        data: [
-          { $sort: { createdAt: -1 } },
-          { $skip: skip },
-          { $limit: limit },
-        ],
-        metadata: [
-          { $count: 'total' },
+  pipeline.push(...getUserLookupStages());
+
+  if (options.search && options.search.trim()) {
+    const searchRegex = { $regex: options.search.trim(), $options: 'i' };
+    pipeline.push({
+      $match: {
+        $or: [
+          { title: searchRegex },
+          { description: searchRegex },
+          { 'user.name': searchRegex },
+          { 'user.email': searchRegex },
         ],
       },
+    });
+  }
+
+  pipeline.push({
+    $facet: {
+      data: [
+        { $sort: { createdAt: -1 } },
+        { $skip: skip },
+        { $limit: limit },
+      ],
+      metadata: [
+        { $count: 'total' },
+      ],
     },
-  ];
+  });
 
   const [result] = await Task.aggregate(pipeline);
 
