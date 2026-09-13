@@ -1,3 +1,7 @@
+import { useState } from 'react';
+import { NotificationBell } from './NotificationBell.js';
+import { SendNotificationModal } from './SendNotificationModal.js';
+
 interface User {
   id: string;
   name: string;
@@ -11,6 +15,8 @@ interface NavbarProps {
 }
 
 const Navbar = ({ user, onLogout }: NavbarProps) => {
+  const [sendModalOpen, setSendModalOpen] = useState(false);
+
   return (
     <header className="sticky top-0 z-30 border-b border-slate-200 bg-white shadow-xs">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
@@ -22,7 +28,22 @@ const Navbar = ({ user, onLogout }: NavbarProps) => {
         </div>
 
         <div className="flex items-center space-x-4">
-          <div className="hidden text-right sm:block">
+          {/* Admin Broadcast Button */}
+          {user?.role === 'admin' && (
+            <button
+              onClick={() => setSendModalOpen(true)}
+              className="cursor-pointer rounded-md bg-amber-500 hover:bg-amber-600 px-3 py-1.5 text-xs font-semibold text-white shadow-xs transition-colors flex items-center gap-1"
+            >
+              <span>📢</span>
+              <span className="hidden sm:inline">Broadcast</span>
+            </button>
+          )}
+
+          {/* Real-time Notification Bell */}
+          <NotificationBell />
+
+          {/* User Profile Info */}
+          <div className="hidden sm:block text-right border-l border-slate-200 pl-4">
             <p className="text-sm font-semibold text-slate-900">{user?.name || 'User'}</p>
             <div className="flex items-center justify-end space-x-1">
               <span className="text-xs text-slate-500">{user?.email}</span>
@@ -31,6 +52,8 @@ const Navbar = ({ user, onLogout }: NavbarProps) => {
               </span>
             </div>
           </div>
+
+          {/* Sign Out Button */}
           <button
             onClick={onLogout}
             className="cursor-pointer rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors"
@@ -39,6 +62,14 @@ const Navbar = ({ user, onLogout }: NavbarProps) => {
           </button>
         </div>
       </div>
+
+      {/* Admin Broadcast Notification Modal */}
+      {user?.role === 'admin' && (
+        <SendNotificationModal
+          isOpen={sendModalOpen}
+          onClose={() => setSendModalOpen(false)}
+        />
+      )}
     </header>
   );
 };

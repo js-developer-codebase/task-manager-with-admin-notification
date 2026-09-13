@@ -78,6 +78,28 @@ const deleteTask = (id: string) => {
   });
 };
 
+// Notification API
+const getNotifications = () => {
+  return apiRequest('/notifications');
+};
+
+const getUnreadNotificationCount = () => {
+  return apiRequest('/notifications/unread-count');
+};
+
+const markNotificationAsRead = (id: string) => {
+  return apiRequest(`/notifications/${id}/read`, {
+    method: 'PATCH',
+  });
+};
+
+const sendNotification = (title: string, message: string) => {
+  return apiRequest('/notifications', {
+    method: 'POST',
+    body: JSON.stringify({ title, message }),
+  });
+};
+
 const api = {
   signup,
   login,
@@ -87,7 +109,25 @@ const api = {
   createTask,
   updateTask,
   deleteTask,
+  getNotifications,
+  getUnreadNotificationCount,
+  markNotificationAsRead,
+  sendNotification,
 };
 
-export { api, signup, login, getMe, getTasks, getTaskStats, createTask, updateTask, deleteTask };
+export {
+  api,
+  signup,
+  login,
+  getMe,
+  getTasks,
+  getTaskStats,
+  createTask,
+  updateTask,
+  deleteTask,
+  getNotifications,
+  getUnreadNotificationCount,
+  markNotificationAsRead,
+  sendNotification,
+};
 export default api;
