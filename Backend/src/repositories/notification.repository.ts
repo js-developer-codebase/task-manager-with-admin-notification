@@ -4,6 +4,7 @@ import { Notification, INotification, INotificationDTO } from '../models/notific
 export interface NotificationFilterOptions {
   page?: number;
   limit?: number;
+  before?: string;
 }
 
 export interface PaginatedNotificationsResult {
@@ -34,18 +35,40 @@ const findAll = async (
 
   const userObjectId = Types.ObjectId.isValid(userId) ? new Types.ObjectId(userId) : null;
 
-  const pipeline: any[] = [];
+  let beforeCondition: any = null;
+  if (options.before && Types.ObjectId.isValid(options.before)) {
+    const cursorDoc = await Notification.findById(options.before).select('createdAt');
+    if (cursorDoc) {
+      beforeCondition = {
+        $or: [
+          { createdAt: { $lt: cursorDoc.createdAt } },
+          { createdAt: cursorDoc.createdAt, _id: { $lt: cursorDoc._id } },
+        ],
+      };
+    } else {
+      beforeCondition = {
+        _id: { $lt: new Types.ObjectId(options.before) },
+      };
+    }
+  }
 
+  const matchConditions: any[] = [];
   if (userObjectId) {
+    matchConditions.push({ deletedBy: { $ne: userObjectId } });
+  }
+  if (beforeCondition) {
+    matchConditions.push(beforeCondition);
+  }
+
+  const pipeline: any[] = [];
+  if (matchConditions.length > 0) {
     pipeline.push({
-      $match: {
-        deletedBy: { $ne: userObjectId },
-      },
+      $match: matchConditions.length === 1 ? matchConditions[0] : { $and: matchConditions },
     });
   }
 
   pipeline.push(
-    { $sort: { createdAt: -1 } },
+    { $sort: { createdAt: -1, _id: -1 } },
     {
       $project: {
         _id: 1,
@@ -57,26 +80,25 @@ const findAll = async (
           ? { $in: [userObjectId, { $ifNull: ['$readBy', []] }] }
           : false,
       },
-    },
-    {
-      $facet: {
-        data: [
-          { $skip: skip },
-          { $limit: limit },
-        ],
-        metadata: [
-          { $count: 'total' },
-        ],
-      },
     }
   );
 
-  const [result] = await Notification.aggregate(pipeline);
+  // If before cursor is provided, skip is not needed (cursor directly references the slice)
+  if (!options.before && skip > 0) {
+    pipeline.push({ $skip: skip });
+  }
 
-  const total = result?.metadata?.[0]?.total || 0;
-  const notifications: INotificationDTO[] = result?.data || [];
+  // Fetch limit + 1 to determine hasMore without requiring an extra expensive query
+  pipeline.push({ $limit: limit + 1 });
+
+  const rawNotifications: INotificationDTO[] = await Notification.aggregate(pipeline);
+  const hasMore = rawNotifications.length > limit;
+  const notifications = hasMore ? rawNotifications.slice(0, limit) : rawNotifications;
+
+  const total = userObjectId
+    ? await Notification.countDocuments({ deletedBy: { $ne: userObjectId } })
+    : await Notification.countDocuments();
   const totalPages = Math.ceil(total / limit);
-  const hasMore = page < totalPages;
 
   return {
     notifications,

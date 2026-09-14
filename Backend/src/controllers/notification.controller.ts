@@ -32,8 +32,9 @@ const getNotifications = async (req: Request, res: Response, next: NextFunction)
     const userId = (req as AuthenticatedRequest).user!.id;
     const page = req.query.page ? parseInt(req.query.page as string, 10) : 1;
     const limit = req.query.limit ? parseInt(req.query.limit as string, 10) : 10;
+    const before = typeof req.query.before === 'string' && req.query.before.trim() ? req.query.before.trim() : undefined;
 
-    const result = await notificationService.getAllNotifications(userId, { page, limit });
+    const result = await notificationService.getAllNotifications(userId, { page, limit, before });
 
     return res.status(200).json({
       success: true,

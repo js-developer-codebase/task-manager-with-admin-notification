@@ -1,6 +1,7 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { useAppDispatch, useAppSelector } from '../redux/hooks.js';
 import {
+  setNotifications,
   markAsReadInList,
   removeNotificationInList,
   appendNotifications,
@@ -13,6 +14,7 @@ const NotificationBell = () => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
+  const isFetchingRef = useRef(false);
   const dispatch = useAppDispatch();
   const { notifications, unreadCount, hasMore, page, loadingMore } = useAppSelector(
     (state) => state.notifications
@@ -30,14 +32,29 @@ const NotificationBell = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const handleScroll = async () => {
-    if (!listRef.current || loadingMore || !hasMore) return;
-    const { scrollTop, scrollHeight, clientHeight } = listRef.current;
-    if (scrollTop + clientHeight >= scrollHeight - 40) {
-      try {
-        dispatch(setLoadingMore(true));
+  const loadMore = useCallback(async () => {
+    if (loadingMore || isFetchingRef.current) return;
+    if (!hasMore && notifications.length > 0 && unreadCount === 0) return;
+
+    try {
+      isFetchingRef.current = true;
+      dispatch(setLoadingMore(true));
+
+      if (notifications.length === 0) {
+        // If list is empty (e.g. all visible notifications deleted), fetch from top (page 1)
+        const res = await api.getNotifications(1, 10);
+        dispatch(
+          setNotifications({
+            notifications: res.data,
+            hasMore: res.pagination?.hasMore ?? false,
+            page: 1,
+          })
+        );
+      } else {
+        // Cursor: ID of the oldest notification currently in the list
+        const oldestId = notifications[notifications.length - 1]._id;
         const nextPage = page + 1;
-        const res = await api.getNotifications(nextPage, 10);
+        const res = await api.getNotifications(nextPage, 10, oldestId);
         dispatch(
           appendNotifications({
             notifications: res.data,
@@ -45,12 +62,48 @@ const NotificationBell = () => {
             page: nextPage,
           })
         );
-      } catch (err) {
-        console.error('Failed to load more notifications:', err);
-        dispatch(setLoadingMore(false));
       }
+    } catch (err) {
+      console.error('Failed to load more notifications:', err);
+    } finally {
+      dispatch(setLoadingMore(false));
+      isFetchingRef.current = false;
+    }
+  }, [dispatch, hasMore, loadingMore, notifications, page, unreadCount]);
+
+  const handleScroll = () => {
+    if (!listRef.current || loadingMore || !hasMore || isFetchingRef.current) return;
+    const { scrollTop, scrollHeight, clientHeight } = listRef.current;
+    if (scrollTop + clientHeight >= scrollHeight - 40) {
+      loadMore();
     }
   };
+
+  // Auto-refill when notifications list is empty or does not fill the dropdown (scrollbar removed)
+  // but more notifications are available in the database
+  useEffect(() => {
+    if (!isOpen || loadingMore || isFetchingRef.current) return;
+
+    // If list is empty but notifications exist on server, immediately fetch top batch
+    if (notifications.length === 0 && (unreadCount > 0 || hasMore)) {
+      loadMore();
+      return;
+    }
+
+    if (hasMore) {
+      const timer = setTimeout(() => {
+        if (listRef.current) {
+          const { scrollHeight, clientHeight } = listRef.current;
+          // If content is not overflowing (no scrollbar) or near bottom
+          if (scrollHeight <= clientHeight + 20) {
+            loadMore();
+          }
+        }
+      }, 50);
+
+      return () => clearTimeout(timer);
+    }
+  }, [isOpen, notifications.length, hasMore, unreadCount, loadingMore, loadMore]);
 
   const handleMarkAsRead = async (notification: AppNotification) => {
     if (notification.isRead) return;
@@ -125,9 +178,16 @@ const NotificationBell = () => {
             className="max-h-80 overflow-y-auto divide-y divide-slate-100 custom-scrollbar"
           >
             {notifications.length === 0 ? (
-              <div className="py-8 text-center text-sm text-slate-400">
-                No notifications yet
-              </div>
+              loadingMore ? (
+                <div className="flex items-center justify-center py-8 text-xs text-slate-500 gap-1.5">
+                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-solid border-blue-600 border-r-transparent" />
+                  <span>Loading notifications...</span>
+                </div>
+              ) : (
+                <div className="py-8 text-center text-sm text-slate-400">
+                  No notifications yet
+                </div>
+              )
             ) : (
               <>
                 {notifications.map((n) => (

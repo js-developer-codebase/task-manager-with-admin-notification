@@ -79,10 +79,11 @@ const deleteTask = (id: string) => {
 };
 
 // Notification API
-const getNotifications = (page: number = 1, limit: number = 10) => {
+const getNotifications = (page: number = 1, limit: number = 10, before?: string) => {
   const params = new URLSearchParams();
   if (page) params.append('page', String(page));
   if (limit) params.append('limit', String(limit));
+  if (before) params.append('before', before);
 
   return apiRequest(`/notifications?${params.toString()}`);
 };

@@ -56,7 +56,7 @@ const notificationSlice = createSlice({
       const existingIds = new Set(state.notifications.map((n) => n._id));
       const newItems = action.payload.notifications.filter((n) => !existingIds.has(n._id));
       state.notifications.push(...newItems);
-      state.hasMore = action.payload.hasMore;
+      state.hasMore = action.payload.notifications.length > 0 ? action.payload.hasMore : false;
       state.page = action.payload.page;
       state.loadingMore = false;
     },
