@@ -36,34 +36,60 @@ task-manager-with-admin-notification/
 
 ---
 
-## Quick Start
+## Running the Application
 
-### 1. Prerequisites
-- Node.js (v20+ or v24+)
-- Docker (for Redis)
-- MongoDB instance (Local or Atlas URI)
-
-### 2. Start Backend
+### Option A: Run Full Stack in Docker (Recommended for instant setup)
+Run the entire ecosystem (Redis, Backend, Frontend with Nginx) with a single command:
 ```bash
-# 1. Start Redis in Docker
-cd Backend
-docker compose up -d
+docker compose up --build
+```
+- **Frontend**: [http://localhost:5173](http://localhost:5173)
+- **Backend API**: [http://localhost:5000](http://localhost:5000)
+- **Swagger Docs**: [http://localhost:5000/api-docs](http://localhost:5000/api-docs)
 
-# 2. Configure .env (copied from .env.example)
-# 3. Start development server
+---
+
+### Option B: Native Node.js with Dockerized Redis (Best for local development)
+Run Redis in Docker, and run Backend & Frontend natively via standard `npm` commands:
+
+**1. Start Redis in Docker:**
+```bash
+cd Backend
+docker compose up redis -d
+```
+
+**2. Start Backend API (Terminal 1):**
+```bash
+cd Backend
 npm install
 npm run dev
 # Server running at: http://localhost:5000
-# Swagger docs at:   http://localhost:5000/api-docs
 ```
 
-### 3. Start Frontend
+**3. Start Frontend UI (Terminal 2):**
 ```bash
-cd ../Frontend
+cd Frontend
 npm install
 npm run dev
 # App running at: http://localhost:5173
 ```
+
+---
+
+### Option C: Run Services Independently in Docker
+Each service has its own dedicated Docker setup:
+
+- **Run Backend + Redis only in Docker:**
+  ```bash
+  cd Backend
+  docker compose up --build
+  ```
+
+- **Run Frontend only in Docker:**
+  ```bash
+  cd Frontend
+  docker compose up --build
+  ```
 
 ---
 

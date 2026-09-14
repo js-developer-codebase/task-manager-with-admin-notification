@@ -78,37 +78,41 @@ src/
 
 ---
 
-## Getting Started
+## 🛠️ Getting Started & Running Options
 
-### 1. Start Redis in Docker
+### 💻 Option 1: Native Node.js with Dockerized Redis (Local Development)
+1. **Start Redis in Docker:**
+   ```bash
+   cd Backend
+   docker compose up redis -d
+   ```
+
+2. **Install Dependencies & Configure `.env`:**
+   ```bash
+   npm install
+   ```
+   Ensure `.env` has `REDIS_HOST=localhost`.
+
+3. **Run Development Server:**
+   ```bash
+   npm run dev
+   # API running at: http://localhost:5000
+   ```
+
+---
+
+### 🐳 Option 2: Run Backend & Redis Together in Docker
+Run both Redis and the Node.js API together in containers:
 ```bash
 cd Backend
-docker compose up -d
+docker compose up --build
 ```
+- API is available at: `http://localhost:5000`
+- Automatically routes Redis traffic to the `redis` container.
 
-### 2. Install Dependencies
-```bash
-npm install
-```
+---
 
-### 3. Configure Environment Variables
-Copy `.env.example` to `.env`:
-```env
-PORT=5000
-MONGODB_URI=mongodb://127.0.0.1:27017/task_management_db
-JWT_SECRET=supersecretjwtkey_replace_in_production_12345
-JWT_EXPIRES_IN=7d
-CORS_ORIGIN=http://localhost:5173
-REDIS_HOST=localhost
-REDIS_PORT=6379
-```
-
-### 4. Run Development Server
-```bash
-npm run dev
-```
-
-### 5. Build & Run Production
+### 📦 Option 3: Build & Run Production Standalone
 ```bash
 npm run build
 npm start
