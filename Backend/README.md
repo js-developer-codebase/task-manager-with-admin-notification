@@ -4,7 +4,7 @@ A clean, modular, and scalable REST API built with Express, MongoDB (Mongoose), 
 
 ---
 
-## 📁 Architecture Overview
+## Architecture Overview
 
 ```
 src/
@@ -48,7 +48,7 @@ src/
 
 ---
 
-## 🚀 Key Highlights
+## Key Highlights
 
 1. **Clean N-Tier Architecture**:
    - **Route**: Maps URL endpoints, applies authentication and role-based middlewares.
@@ -69,10 +69,16 @@ src/
    - `src/constants/errorCodes.ts` defines unified error codes and HTTP statuses (`BAD_REQUEST`, `UNAUTHORIZED`, `FORBIDDEN`, `NOT_FOUND`, `USER_ALREADY_EXISTS`, `INTERNAL_SERVER_ERROR`).
 6. **Clean Exports**:
    - All modules follow the convention of placing exports at the bottom of the file.
+7. **Rate Limiting & Brute-Force Protection**:
+   - Centralized rate limiters powered by `express-rate-limit` with standard `RateLimit-*` response headers.
+   - Global API limit: 100 requests per 15 minutes per IP.
+   - Auth limit: 10 attempts per 15 minutes per IP on `/api/auth/login` and `/api/auth/signup`.
+   - Admin broadcast limit: 10 broadcasts per 5 minutes.
+   - Returns standard `429 Too Many Requests` with `TOO_MANY_REQUESTS` error code.
 
 ---
 
-## 🛠️ Getting Started
+## Getting Started
 
 ### 1. Start Redis in Docker
 ```bash
@@ -110,16 +116,16 @@ npm start
 
 ---
 
-## 📖 API Documentation (Swagger)
+## API Documentation (Swagger)
 
 Interactive Swagger UI documentation is available at:
-👉 **`http://localhost:5000/api-docs`**
+ **`http://localhost:5000/api-docs`**
 
 Allows interactive testing of all authentication, task, and notification endpoints directly from the browser with JWT Bearer support.
 
 ---
 
-## 📡 API Endpoints
+## API Endpoints
 
 ### Health Check
 - `GET /api/health` - Server health status

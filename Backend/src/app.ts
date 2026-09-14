@@ -4,6 +4,7 @@ import { apiRouter } from './routes/index.js';
 import { errorHandler } from './middlewares/error.middleware.js';
 import { ERROR_CODES } from './constants/errorCodes.js';
 import { swaggerServe, swaggerSetup } from './config/swagger.js';
+import { apiLimiter } from './middlewares/rateLimiter.middleware.js';
 
 const app = express();
 
@@ -19,6 +20,9 @@ app.use(express.urlencoded({ extended: true }));
 
 // Swagger Documentation Route
 app.use('/api-docs', swaggerServe, swaggerSetup);
+
+// Apply rate limiting to all API endpoints
+app.use('/api', apiLimiter);
 
 // API Routes
 app.use('/api', apiRouter);

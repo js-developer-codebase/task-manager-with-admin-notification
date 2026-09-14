@@ -1,14 +1,15 @@
 import { Router } from 'express';
 import { notificationController } from '../controllers/notification.controller.js';
 import { authenticate, authorizeRoles } from '../middlewares/auth.middleware.js';
+import { notificationBroadcastLimiter } from '../middlewares/rateLimiter.middleware.js';
 
 const router = Router();
 
 // Protect all notification routes with JWT authentication
 router.use(authenticate);
 
-// Only Admins can create and broadcast notifications
-router.post('/', authorizeRoles('admin'), notificationController.createNotification);
+// Only Admins can create and broadcast notifications (rate-limited)
+router.post('/', authorizeRoles('admin'), notificationBroadcastLimiter, notificationController.createNotification);
 
 // All authenticated users can view, mark as read, and delete notifications (for themselves)
 router.get('/', notificationController.getNotifications);

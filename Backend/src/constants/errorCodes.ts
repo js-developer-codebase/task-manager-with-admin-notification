@@ -34,6 +34,11 @@ export const ERROR_CODES = {
     status: 500,
     message: 'Internal server error occurred',
   },
+  TOO_MANY_REQUESTS: {
+    code: 'TOO_MANY_REQUESTS',
+    status: 429,
+    message: 'Too many requests, please try again later',
+  },
 } as const;
 
 export type ErrorDefinition = {
