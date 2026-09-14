@@ -78,9 +78,9 @@ src/
 
 ---
 
-## 🛠️ Getting Started & Running Options
+## Getting Started & Running Options
 
-### 💻 Option 1: Native Node.js with Dockerized Redis (Local Development)
+### Option 1: Native Node.js with Dockerized Redis (Local Development)
 1. **Start Redis in Docker:**
    ```bash
    cd Backend
@@ -101,7 +101,7 @@ src/
 
 ---
 
-### 🐳 Option 2: Run Backend & Redis Together in Docker
+### Option 2: Run Backend & Redis Together in Docker
 Run both Redis and the Node.js API together in containers:
 ```bash
 cd Backend
@@ -112,7 +112,7 @@ docker compose up --build
 
 ---
 
-### 📦 Option 3: Build & Run Production Standalone
+### Option 3: Build & Run Production Standalone
 ```bash
 npm run build
 npm start
