@@ -30,11 +30,21 @@ const createNotification = async (req: Request, res: Response, next: NextFunctio
 const getNotifications = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const userId = (req as AuthenticatedRequest).user!.id;
-    const notifications = await notificationService.getAllNotifications(userId);
+    const page = req.query.page ? parseInt(req.query.page as string, 10) : 1;
+    const limit = req.query.limit ? parseInt(req.query.limit as string, 10) : 10;
+
+    const result = await notificationService.getAllNotifications(userId, { page, limit });
 
     return res.status(200).json({
       success: true,
-      data: notifications,
+      data: result.notifications,
+      pagination: {
+        total: result.total,
+        page: result.page,
+        limit: result.limit,
+        totalPages: result.totalPages,
+        hasMore: result.hasMore,
+      },
     });
   } catch (error) {
     next(error);

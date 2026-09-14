@@ -3,6 +3,8 @@ import { useAppDispatch, useAppSelector } from '../redux/hooks.js';
 import {
   markAsReadInList,
   removeNotificationInList,
+  appendNotifications,
+  setLoadingMore,
   type AppNotification,
 } from '../redux/slices/notificationSlice.js';
 import { api } from '../services/api.js';
@@ -10,8 +12,11 @@ import { api } from '../services/api.js';
 const NotificationBell = () => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const listRef = useRef<HTMLDivElement>(null);
   const dispatch = useAppDispatch();
-  const { notifications, unreadCount } = useAppSelector((state) => state.notifications);
+  const { notifications, unreadCount, hasMore, page, loadingMore } = useAppSelector(
+    (state) => state.notifications
+  );
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -24,6 +29,28 @@ const NotificationBell = () => {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  const handleScroll = async () => {
+    if (!listRef.current || loadingMore || !hasMore) return;
+    const { scrollTop, scrollHeight, clientHeight } = listRef.current;
+    if (scrollTop + clientHeight >= scrollHeight - 40) {
+      try {
+        dispatch(setLoadingMore(true));
+        const nextPage = page + 1;
+        const res = await api.getNotifications(nextPage, 10);
+        dispatch(
+          appendNotifications({
+            notifications: res.data,
+            hasMore: res.pagination?.hasMore ?? false,
+            page: nextPage,
+          })
+        );
+      } catch (err) {
+        console.error('Failed to load more notifications:', err);
+        dispatch(setLoadingMore(false));
+      }
+    }
+  };
 
   const handleMarkAsRead = async (notification: AppNotification) => {
     if (notification.isRead) return;
@@ -92,66 +119,79 @@ const NotificationBell = () => {
           </div>
 
           {/* List */}
-          <div className="max-h-80 overflow-y-auto divide-y divide-slate-100">
+          <div
+            ref={listRef}
+            onScroll={handleScroll}
+            className="max-h-80 overflow-y-auto divide-y divide-slate-100 custom-scrollbar"
+          >
             {notifications.length === 0 ? (
               <div className="py-8 text-center text-sm text-slate-400">
                 No notifications yet
               </div>
             ) : (
-              notifications.map((n) => (
-                <div
-                  key={n._id}
-                  onClick={() => handleMarkAsRead(n)}
-                  className={`group relative cursor-pointer p-4 text-left transition-colors hover:bg-slate-50 ${
-                    !n.isRead ? 'bg-blue-50/40' : 'bg-white'
-                  }`}
-                >
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex items-center gap-1.5 flex-1 min-w-0">
-                      {!n.isRead && (
-                        <span className="h-2 w-2 rounded-full bg-blue-600 shrink-0" />
-                      )}
-                      <h5
-                        className={`text-sm truncate ${
-                          !n.isRead ? 'font-semibold text-slate-900' : 'font-medium text-slate-700'
-                        }`}
-                      >
-                        {n.title}
-                      </h5>
-                    </div>
-                    <div className="flex items-center gap-1.5 shrink-0">
-                      <span className="text-[10px] text-slate-400 whitespace-nowrap">
-                        {new Date(n.createdAt).toLocaleTimeString([], {
-                          hour: '2-digit',
-                          minute: '2-digit',
-                        })}
-                      </span>
-                      <button
-                        onClick={(e) => handleDeleteNotification(e, n._id)}
-                        className="cursor-pointer rounded p-1 text-slate-400 hover:bg-red-50 hover:text-red-600 transition-colors"
-                        title="Delete notification"
-                        aria-label="Delete notification"
-                      >
-                        <svg
-                          className="h-3.5 w-3.5"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                          xmlns="http://www.w3.org/2000/svg"
+              <>
+                {notifications.map((n) => (
+                  <div
+                    key={n._id}
+                    onClick={() => handleMarkAsRead(n)}
+                    className={`group relative cursor-pointer p-4 text-left transition-colors hover:bg-slate-50 ${
+                      !n.isRead ? 'bg-blue-50/40' : 'bg-white'
+                    }`}
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex items-center gap-1.5 flex-1 min-w-0">
+                        {!n.isRead && (
+                          <span className="h-2 w-2 rounded-full bg-blue-600 shrink-0" />
+                        )}
+                        <h5
+                          className={`text-sm truncate ${
+                            !n.isRead ? 'font-semibold text-slate-900' : 'font-medium text-slate-700'
+                          }`}
                         >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth="2"
-                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                          />
-                        </svg>
-                      </button>
+                          {n.title}
+                        </h5>
+                      </div>
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <span className="text-[10px] text-slate-400 whitespace-nowrap">
+                          {new Date(n.createdAt).toLocaleTimeString([], {
+                            hour: '2-digit',
+                            minute: '2-digit',
+                          })}
+                        </span>
+                        <button
+                          onClick={(e) => handleDeleteNotification(e, n._id)}
+                          className="cursor-pointer rounded p-1 text-slate-400 hover:bg-red-50 hover:text-red-600 transition-colors"
+                          title="Delete notification"
+                          aria-label="Delete notification"
+                        >
+                          <svg
+                            className="h-3.5 w-3.5"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                            xmlns="http://www.w3.org/2000/svg"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth="2"
+                              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                            />
+                          </svg>
+                        </button>
+                      </div>
                     </div>
+                    <p className="mt-1 text-xs text-slate-600 line-clamp-2">{n.message}</p>
                   </div>
-                  <p className="mt-1 text-xs text-slate-600 line-clamp-2">{n.message}</p>
-                </div>
-              ))
+                ))}
+
+                {loadingMore && (
+                  <div className="flex items-center justify-center py-3 text-xs text-slate-500 gap-1.5 bg-slate-50">
+                    <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-solid border-blue-600 border-r-transparent" />
+                    <span>Loading more notifications...</span>
+                  </div>
+                )}
+              </>
             )}
           </div>
         </div>

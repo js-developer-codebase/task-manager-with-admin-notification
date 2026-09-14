@@ -27,6 +27,7 @@ import {
   setNotifications,
   addNotification,
   clearNotifications,
+  setUnreadCount,
   type AppNotification,
 } from '../redux/slices/notificationSlice.js';
 
@@ -89,8 +90,18 @@ const DashboardPage = () => {
   useEffect(() => {
     const fetchNotifications = async () => {
       try {
-        const res = await api.getNotifications();
-        dispatch(setNotifications(res.data));
+        const [notifRes, unreadRes] = await Promise.all([
+          api.getNotifications(1, 10),
+          api.getUnreadNotificationCount(),
+        ]);
+        dispatch(
+          setNotifications({
+            notifications: notifRes.data,
+            hasMore: notifRes.pagination?.hasMore ?? false,
+            page: 1,
+          })
+        );
+        dispatch(setUnreadCount(unreadRes.data.count));
       } catch (err) {
         console.error('Failed to load notifications from DB', err);
       }

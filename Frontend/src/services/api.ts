@@ -79,8 +79,12 @@ const deleteTask = (id: string) => {
 };
 
 // Notification API
-const getNotifications = () => {
-  return apiRequest('/notifications');
+const getNotifications = (page: number = 1, limit: number = 10) => {
+  const params = new URLSearchParams();
+  if (page) params.append('page', String(page));
+  if (limit) params.append('limit', String(limit));
+
+  return apiRequest(`/notifications?${params.toString()}`);
 };
 
 const getUnreadNotificationCount = () => {

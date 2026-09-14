@@ -12,6 +12,9 @@ export interface NotificationState {
   notifications: AppNotification[];
   unreadCount: number;
   loading: boolean;
+  loadingMore: boolean;
+  hasMore: boolean;
+  page: number;
   toast: AppNotification | null;
 }
 
@@ -19,6 +22,9 @@ const initialState: NotificationState = {
   notifications: [],
   unreadCount: 0,
   loading: false,
+  loadingMore: false,
+  hasMore: false,
+  page: 1,
   toast: null,
 };
 
@@ -26,10 +32,39 @@ const notificationSlice = createSlice({
   name: 'notifications',
   initialState,
   reducers: {
-    setNotifications: (state, action: PayloadAction<AppNotification[]>) => {
-      state.notifications = action.payload;
-      state.unreadCount = action.payload.filter((n) => !n.isRead).length;
+    setNotifications: (
+      state,
+      action: PayloadAction<
+        AppNotification[] | { notifications: AppNotification[]; hasMore?: boolean; page?: number }
+      >
+    ) => {
+      if (Array.isArray(action.payload)) {
+        state.notifications = action.payload;
+        state.hasMore = false;
+        state.page = 1;
+      } else {
+        state.notifications = action.payload.notifications;
+        state.hasMore = action.payload.hasMore ?? false;
+        state.page = action.payload.page ?? 1;
+      }
       state.loading = false;
+    },
+    appendNotifications: (
+      state,
+      action: PayloadAction<{ notifications: AppNotification[]; hasMore: boolean; page: number }>
+    ) => {
+      const existingIds = new Set(state.notifications.map((n) => n._id));
+      const newItems = action.payload.notifications.filter((n) => !existingIds.has(n._id));
+      state.notifications.push(...newItems);
+      state.hasMore = action.payload.hasMore;
+      state.page = action.payload.page;
+      state.loadingMore = false;
+    },
+    setLoadingMore: (state, action: PayloadAction<boolean>) => {
+      state.loadingMore = action.payload;
+    },
+    setUnreadCount: (state, action: PayloadAction<number>) => {
+      state.unreadCount = action.payload;
     },
     addNotification: (state, action: PayloadAction<AppNotification>) => {
       // Check if already exists to prevent duplicate
@@ -65,6 +100,9 @@ const notificationSlice = createSlice({
     clearNotifications: (state) => {
       state.notifications = [];
       state.unreadCount = 0;
+      state.hasMore = false;
+      state.page = 1;
+      state.loadingMore = false;
       state.toast = null;
       state.loading = false;
     },
@@ -76,6 +114,9 @@ const notificationSlice = createSlice({
 
 const {
   setNotifications,
+  appendNotifications,
+  setLoadingMore,
+  setUnreadCount,
   addNotification,
   markAsReadInList,
   removeNotificationInList,
@@ -90,6 +131,9 @@ export {
   notificationSlice,
   notificationReducer,
   setNotifications,
+  appendNotifications,
+  setLoadingMore,
+  setUnreadCount,
   addNotification,
   markAsReadInList,
   removeNotificationInList,

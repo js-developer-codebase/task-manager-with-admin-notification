@@ -332,9 +332,13 @@ const swaggerDocument = {
         },
       },
       get: {
-        summary: 'Get all notifications with user-specific read status',
+        summary: 'Get all notifications with user-specific read status and pagination',
         tags: ['Notifications'],
         security: [{ bearerAuth: [] }],
+        parameters: [
+          { name: 'page', in: 'query', schema: { type: 'integer', default: 1 } },
+          { name: 'limit', in: 'query', schema: { type: 'integer', default: 10 } },
+        ],
         responses: {
           200: {
             description: 'List of notifications',

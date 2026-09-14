@@ -4,7 +4,7 @@ Full-stack production-ready MERN application with clean N-tier architecture, pur
 
 ---
 
-## 🏗️ Project Architecture
+## Project Architecture
 
 ```
 task-manager-with-admin-notification/
@@ -36,7 +36,7 @@ task-manager-with-admin-notification/
 
 ---
 
-## ⚡ Quick Start
+## Quick Start
 
 ### 1. Prerequisites
 - Node.js (v20+ or v24+)
@@ -67,7 +67,7 @@ npm run dev
 
 ---
 
-## 📖 Key Features & Implementation Details
+## Key Features & Implementation Details
 
 1. **Clean Route &rarr; Controller &rarr; Service &rarr; Repository Architecture**:
    - Explicit layer separation with plain functions and exports placed at the bottom of files.

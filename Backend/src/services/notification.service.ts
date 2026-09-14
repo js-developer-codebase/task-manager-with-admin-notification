@@ -1,5 +1,5 @@
 import { addNotificationJob } from '../queues/notification.queue.js';
-import { notificationRepository } from '../repositories/notification.repository.js';
+import { notificationRepository, NotificationFilterOptions } from '../repositories/notification.repository.js';
 import { ERROR_CODES, AppError } from '../constants/errorCodes.js';
 
 const sendNotification = async (title: string, message: string) => {
@@ -16,8 +16,8 @@ const sendNotification = async (title: string, message: string) => {
   };
 };
 
-const getAllNotifications = async (userId: string) => {
-  return await notificationRepository.findAll(userId);
+const getAllNotifications = async (userId: string, options: NotificationFilterOptions = {}) => {
+  return await notificationRepository.findAll(userId, options);
 };
 
 const markNotificationAsRead = async (id: string, userId: string) => {

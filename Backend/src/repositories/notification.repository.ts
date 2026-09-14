@@ -1,6 +1,20 @@
 import { Types } from 'mongoose';
 import { Notification, INotification, INotificationDTO } from '../models/notification.model.js';
 
+export interface NotificationFilterOptions {
+  page?: number;
+  limit?: number;
+}
+
+export interface PaginatedNotificationsResult {
+  notifications: INotificationDTO[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+  hasMore: boolean;
+}
+
 const create = async (data: { title: string; message: string }): Promise<INotification> => {
   const notification = new Notification({
     ...data,
@@ -10,7 +24,14 @@ const create = async (data: { title: string; message: string }): Promise<INotifi
   return await notification.save();
 };
 
-const findAll = async (userId: string): Promise<INotificationDTO[]> => {
+const findAll = async (
+  userId: string,
+  options: NotificationFilterOptions = {}
+): Promise<PaginatedNotificationsResult> => {
+  const page = Math.max(1, Number(options.page) || 1);
+  const limit = Math.max(1, Number(options.limit) || 10);
+  const skip = (page - 1) * limit;
+
   const userObjectId = Types.ObjectId.isValid(userId) ? new Types.ObjectId(userId) : null;
 
   const pipeline: any[] = [];
@@ -36,10 +57,35 @@ const findAll = async (userId: string): Promise<INotificationDTO[]> => {
           ? { $in: [userObjectId, { $ifNull: ['$readBy', []] }] }
           : false,
       },
+    },
+    {
+      $facet: {
+        data: [
+          { $skip: skip },
+          { $limit: limit },
+        ],
+        metadata: [
+          { $count: 'total' },
+        ],
+      },
     }
   );
 
-  return await Notification.aggregate<INotificationDTO>(pipeline);
+  const [result] = await Notification.aggregate(pipeline);
+
+  const total = result?.metadata?.[0]?.total || 0;
+  const notifications: INotificationDTO[] = result?.data || [];
+  const totalPages = Math.ceil(total / limit);
+  const hasMore = page < totalPages;
+
+  return {
+    notifications,
+    total,
+    page,
+    limit,
+    totalPages,
+    hasMore,
+  };
 };
 
 const markAsRead = async (id: string, userId: string): Promise<INotificationDTO | null> => {
