@@ -6,6 +6,7 @@ import { TaskFilters } from '../components/TaskFilters.js';
 import { TaskCard } from '../components/TaskCard.js';
 import { Pagination } from '../components/Pagination.js';
 import { TaskModal } from '../components/TaskModal.js';
+import { DeleteConfirmModal } from '../components/DeleteConfirmModal.js';
 import { NotificationToast } from '../components/NotificationToast.js';
 import { api } from '../services/api.js';
 import { connectSocket } from '../services/socket.js';
@@ -42,6 +43,7 @@ const DashboardPage = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [modalOpen, setModalOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
+  const [deletingTask, setDeletingTask] = useState<Task | null>(null);
 
   // Debounce search query by 400ms to minimize network requests
   useEffect(() => {
@@ -147,15 +149,16 @@ const DashboardPage = () => {
     loadTasks();
   };
 
-  const handleDeleteTask = async (id: string) => {
-    if (!window.confirm('Are you sure you want to delete this task?')) return;
-    try {
-      await api.deleteTask(id);
-      dispatch(removeTaskFromList(id));
-      loadStats();
-    } catch (err: any) {
-      alert(err.message || 'Failed to delete task');
-    }
+  const handleOpenDelete = (task: Task) => {
+    setDeletingTask(task);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deletingTask) return;
+    await api.deleteTask(deletingTask._id);
+    dispatch(removeTaskFromList(deletingTask._id));
+    loadStats();
+    loadTasks();
   };
 
   return (
@@ -209,7 +212,7 @@ const DashboardPage = () => {
                 key={task._id}
                 task={task}
                 onEdit={handleOpenEdit}
-                onDelete={handleDeleteTask}
+                onDelete={handleOpenDelete}
               />
             ))}
           </div>
@@ -230,6 +233,14 @@ const DashboardPage = () => {
         task={editingTask}
         onClose={() => setModalOpen(false)}
         onSave={handleSaveTask}
+      />
+
+      {/* Task Delete Confirmation Modal */}
+      <DeleteConfirmModal
+        isOpen={!!deletingTask}
+        taskTitle={deletingTask?.title || ''}
+        onClose={() => setDeletingTask(null)}
+        onConfirm={handleConfirmDelete}
       />
 
       {/* Real-Time Notification Floating Toast */}

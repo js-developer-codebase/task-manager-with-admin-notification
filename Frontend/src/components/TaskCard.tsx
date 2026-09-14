@@ -3,7 +3,7 @@ import type { Task, TaskStatus } from '../redux/slices/taskSlice.js';
 interface TaskCardProps {
   task: Task;
   onEdit: (task: Task) => void;
-  onDelete: (id: string) => void;
+  onDelete: (task: Task) => void;
 }
 
 const getStatusBadgeClass = (status: TaskStatus) => {
@@ -66,7 +66,7 @@ const TaskCard = ({ task, onEdit, onDelete }: TaskCardProps) => {
             Edit
           </button>
           <button
-            onClick={() => onDelete(task._id)}
+            onClick={() => onDelete(task)}
             className="cursor-pointer rounded border border-red-200 bg-red-50 px-2.5 py-1 text-xs font-medium text-red-600 hover:bg-red-100 transition-colors"
           >
             Delete
