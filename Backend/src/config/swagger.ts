@@ -3,9 +3,9 @@ import swaggerUi from 'swagger-ui-express';
 const swaggerDocument = {
   openapi: '3.0.0',
   info: {
-    title: 'Task Management API',
+    title: 'Task Management & Real-Time Notification API',
     version: '1.0.0',
-    description: 'Clean Architecture Express + MongoDB Task Management REST API with TypeScript, JWT authentication, and MongoDB Aggregation Pipelines.',
+    description: 'Clean Architecture Express + MongoDB REST API with TypeScript, JWT authentication, MongoDB Aggregation Pipelines, Redis + BullMQ asynchronous queues, and real-time Socket.io push notifications.',
   },
   servers: [
     {
@@ -117,17 +117,47 @@ const swaggerDocument = {
           updatedAt: { type: 'string', format: 'date-time' },
         },
       },
+      CreateNotificationRequest: {
+        type: 'object',
+        required: ['title', 'message'],
+        properties: {
+          title: { type: 'string', example: 'System Maintenance Notice' },
+          message: { type: 'string', example: 'The server will undergo scheduled maintenance tonight at 12 AM.' },
+        },
+      },
+      Notification: {
+        type: 'object',
+        properties: {
+          _id: { type: 'string', example: '65f987654321abcdef012345' },
+          title: { type: 'string', example: 'System Maintenance Notice' },
+          message: { type: 'string', example: 'The server will undergo scheduled maintenance tonight at 12 AM.' },
+          isRead: { type: 'boolean', example: false },
+          createdAt: { type: 'string', format: 'date-time' },
+          updatedAt: { type: 'string', format: 'date-time' },
+        },
+      },
+      UnreadCountResponse: {
+        type: 'object',
+        properties: {
+          success: { type: 'boolean', example: true },
+          data: {
+            type: 'object',
+            properties: {
+              count: { type: 'number', example: 3 },
+            },
+          },
+        },
+      },
     },
   },
   paths: {
     '/api/health': {
       get: {
         summary: 'Health check',
+        tags: ['System'],
         description: 'Returns server uptime and status',
         responses: {
-          200: {
-            description: 'Server is healthy',
-          },
+          200: { description: 'Server is healthy' },
         },
       },
     },
@@ -146,20 +176,10 @@ const swaggerDocument = {
         responses: {
           201: {
             description: 'User registered successfully',
-            content: {
-              'application/json': {
-                schema: { $ref: '#/components/schemas/AuthResponse' },
-              },
-            },
+            content: { 'application/json': { schema: { $ref: '#/components/schemas/AuthResponse' } } },
           },
-          400: {
-            description: 'Validation error',
-            content: { 'application/json': { schema: { $ref: '#/components/schemas/ErrorResponse' } } },
-          },
-          409: {
-            description: 'Email already exists',
-            content: { 'application/json': { schema: { $ref: '#/components/schemas/ErrorResponse' } } },
-          },
+          400: { description: 'Validation error' },
+          409: { description: 'Email already exists' },
         },
       },
     },
@@ -178,16 +198,9 @@ const swaggerDocument = {
         responses: {
           200: {
             description: 'Login successful',
-            content: {
-              'application/json': {
-                schema: { $ref: '#/components/schemas/AuthResponse' },
-              },
-            },
+            content: { 'application/json': { schema: { $ref: '#/components/schemas/AuthResponse' } } },
           },
-          401: {
-            description: 'Invalid credentials',
-            content: { 'application/json': { schema: { $ref: '#/components/schemas/ErrorResponse' } } },
-          },
+          401: { description: 'Invalid credentials' },
         },
       },
     },
@@ -197,34 +210,25 @@ const swaggerDocument = {
         tags: ['Authentication'],
         security: [{ bearerAuth: [] }],
         responses: {
-          200: {
-            description: 'Current user profile',
-          },
-          401: {
-            description: 'Unauthorized access',
-            content: { 'application/json': { schema: { $ref: '#/components/schemas/ErrorResponse' } } },
-          },
+          200: { description: 'Current user profile' },
+          401: { description: 'Unauthorized access' },
         },
       },
     },
     '/api/tasks': {
       get: {
-        summary: 'Get tasks with filtering & pagination (Aggregation pipeline)',
+        summary: 'Get tasks with filtering & pagination (Aggregation pipeline & User search)',
         tags: ['Tasks'],
         security: [{ bearerAuth: [] }],
         parameters: [
           { name: 'page', in: 'query', schema: { type: 'integer', default: 1 } },
           { name: 'limit', in: 'query', schema: { type: 'integer', default: 10 } },
           { name: 'status', in: 'query', schema: { type: 'string', enum: ['Pending', 'In Progress', 'Completed'] } },
-          { name: 'search', in: 'query', schema: { type: 'string' } },
+          { name: 'search', in: 'query', description: 'Search across title, description, or creator user name', schema: { type: 'string' } },
         ],
         responses: {
-          200: {
-            description: 'List of tasks with pagination metadata',
-          },
-          401: {
-            description: 'Unauthorized access',
-          },
+          200: { description: 'List of tasks with pagination metadata' },
+          401: { description: 'Unauthorized access' },
         },
       },
       post: {
@@ -240,15 +244,9 @@ const swaggerDocument = {
           },
         },
         responses: {
-          201: {
-            description: 'Task created successfully',
-          },
-          400: {
-            description: 'Validation error',
-          },
-          401: {
-            description: 'Unauthorized access',
-          },
+          201: { description: 'Task created successfully' },
+          400: { description: 'Validation error' },
+          401: { description: 'Unauthorized access' },
         },
       },
     },
@@ -258,12 +256,8 @@ const swaggerDocument = {
         tags: ['Tasks'],
         security: [{ bearerAuth: [] }],
         responses: {
-          200: {
-            description: 'Task counts grouped by status',
-          },
-          401: {
-            description: 'Unauthorized access',
-          },
+          200: { description: 'Task counts grouped by status' },
+          401: { description: 'Unauthorized access' },
         },
       },
     },
@@ -313,6 +307,83 @@ const swaggerDocument = {
           200: { description: 'Task deleted successfully' },
           403: { description: 'Forbidden (not owner)' },
           404: { description: 'Task not found' },
+        },
+      },
+    },
+    '/api/notifications': {
+      post: {
+        summary: 'Broadcast notification (Admin only, BullMQ + Redis + Socket.io)',
+        tags: ['Notifications'],
+        security: [{ bearerAuth: [] }],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/CreateNotificationRequest' },
+            },
+          },
+        },
+        responses: {
+          202: {
+            description: 'Notification queued for delivery',
+          },
+          400: { description: 'Missing required fields' },
+          403: { description: 'Forbidden: Admin access required' },
+        },
+      },
+      get: {
+        summary: 'Get all notifications (stored in DB for online/offline persistence)',
+        tags: ['Notifications'],
+        security: [{ bearerAuth: [] }],
+        responses: {
+          200: {
+            description: 'List of notifications',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    success: { type: 'boolean', example: true },
+                    data: {
+                      type: 'array',
+                      items: { $ref: '#/components/schemas/Notification' },
+                    },
+                  },
+                },
+              },
+            },
+          },
+          401: { description: 'Unauthorized' },
+        },
+      },
+    },
+    '/api/notifications/unread-count': {
+      get: {
+        summary: 'Get count of unread notifications',
+        tags: ['Notifications'],
+        security: [{ bearerAuth: [] }],
+        responses: {
+          200: {
+            description: 'Unread count',
+            content: { 'application/json': { schema: { $ref: '#/components/schemas/UnreadCountResponse' } } },
+          },
+          401: { description: 'Unauthorized' },
+        },
+      },
+    },
+    '/api/notifications/{id}/read': {
+      patch: {
+        summary: 'Mark notification as read',
+        tags: ['Notifications'],
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          { name: 'id', in: 'path', required: true, schema: { type: 'string' } },
+        ],
+        responses: {
+          200: {
+            description: 'Notification marked as read',
+          },
+          404: { description: 'Notification not found' },
         },
       },
     },

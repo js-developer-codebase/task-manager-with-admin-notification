@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { authRouter } from './auth.routes.js';
 import { taskRouter } from './task.routes.js';
+import { notificationRouter } from './notification.routes.js';
 
 const apiRouter = Router();
 
@@ -16,6 +17,7 @@ apiRouter.get('/health', (req: Request, res: Response) => {
 // Mount modules
 apiRouter.use('/auth', authRouter);
 apiRouter.use('/tasks', taskRouter);
+apiRouter.use('/notifications', notificationRouter);
 
 export { apiRouter };
 export default apiRouter;

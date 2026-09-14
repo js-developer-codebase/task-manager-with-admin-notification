@@ -6,7 +6,9 @@ import { TaskFilters } from '../components/TaskFilters.js';
 import { TaskCard } from '../components/TaskCard.js';
 import { Pagination } from '../components/Pagination.js';
 import { TaskModal } from '../components/TaskModal.js';
+import { NotificationToast } from '../components/NotificationToast.js';
 import { api } from '../services/api.js';
+import { connectSocket } from '../services/socket.js';
 import { useAppDispatch, useAppSelector } from '../redux/hooks.js';
 import { logout } from '../redux/slices/authSlice.js';
 import {
@@ -20,6 +22,11 @@ import {
   type Task,
   type TaskStatus,
 } from '../redux/slices/taskSlice.js';
+import {
+  setNotifications,
+  addNotification,
+  type AppNotification,
+} from '../redux/slices/notificationSlice.js';
 
 const DashboardPage = () => {
   const dispatch = useAppDispatch();
@@ -69,10 +76,39 @@ const DashboardPage = () => {
     }
   }, [dispatch]);
 
+  // Initial load for tasks & stats
   useEffect(() => {
     loadTasks();
     loadStats();
   }, [loadTasks, loadStats]);
+
+  // Load offline notifications from DB & setup real-time Socket.io updates
+  useEffect(() => {
+    const fetchNotifications = async () => {
+      try {
+        const res = await api.getNotifications();
+        dispatch(setNotifications(res.data));
+      } catch (err) {
+        console.error('Failed to load notifications from DB', err);
+      }
+    };
+
+    fetchNotifications();
+
+    // Connect to WebSocket
+    const socket = connectSocket();
+
+    const handleNewNotification = (notification: AppNotification) => {
+      console.log('[Socket.io] Real-time notification received:', notification);
+      dispatch(addNotification(notification));
+    };
+
+    socket.on('new_notification', handleNewNotification);
+
+    return () => {
+      socket.off('new_notification', handleNewNotification);
+    };
+  }, [dispatch]);
 
   const handleLogout = () => {
     dispatch(logout());
@@ -193,6 +229,9 @@ const DashboardPage = () => {
         onClose={() => setModalOpen(false)}
         onSave={handleSaveTask}
       />
+
+      {/* Real-Time Notification Floating Toast */}
+      <NotificationToast />
     </div>
   );
 };
