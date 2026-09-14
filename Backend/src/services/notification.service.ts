@@ -16,20 +16,20 @@ const sendNotification = async (title: string, message: string) => {
   };
 };
 
-const getAllNotifications = async () => {
-  return await notificationRepository.findAll();
+const getAllNotifications = async (userId: string) => {
+  return await notificationRepository.findAll(userId);
 };
 
-const markNotificationAsRead = async (id: string) => {
-  const notification = await notificationRepository.markAsRead(id);
+const markNotificationAsRead = async (id: string, userId: string) => {
+  const notification = await notificationRepository.markAsRead(id, userId);
   if (!notification) {
     throw new AppError(ERROR_CODES.NOT_FOUND, 'Notification not found');
   }
   return notification;
 };
 
-const getUnreadNotificationCount = async () => {
-  return await notificationRepository.getUnreadCount();
+const getUnreadNotificationCount = async (userId: string) => {
+  return await notificationRepository.getUnreadCount(userId);
 };
 
 const notificationService = {

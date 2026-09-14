@@ -1,6 +1,15 @@
-import { Schema, model, Document } from 'mongoose';
+import { Schema, model, Document, Types } from 'mongoose';
 
 export interface INotification extends Document {
+  title: string;
+  message: string;
+  readBy: Types.ObjectId[];
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface INotificationDTO {
+  _id: string | Types.ObjectId;
   title: string;
   message: string;
   isRead: boolean;
@@ -20,15 +29,19 @@ const notificationSchema = new Schema<INotification>(
       required: [true, 'Message is required'],
       trim: true,
     },
-    isRead: {
-      type: Boolean,
-      default: false,
+    readBy: {
+      type: [Schema.Types.ObjectId],
+      ref: 'User',
+      default: [],
     },
   },
   {
     timestamps: true,
   }
 );
+
+// Index for optimizing per-user unread count and queries
+notificationSchema.index({ readBy: 1 });
 
 const Notification = model<INotification>('Notification', notificationSchema);
 

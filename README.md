@@ -7,7 +7,7 @@ Full-stack production-ready MERN application with clean N-tier architecture, pur
 ## 🏗️ Project Architecture
 
 ```
-interview/
+task-manager-with-admin-notification/
 ├── Backend/                 # Express + TypeScript + MongoDB
 │   ├── docker-compose.yml   # Redis container for BullMQ
 │   ├── src/

@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { notificationService } from '../services/notification.service.js';
 import { ERROR_CODES } from '../constants/errorCodes.js';
+import { AuthenticatedRequest } from '../middlewares/auth.middleware.js';
 
 const createNotification = async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -28,7 +29,8 @@ const createNotification = async (req: Request, res: Response, next: NextFunctio
 
 const getNotifications = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const notifications = await notificationService.getAllNotifications();
+    const userId = (req as AuthenticatedRequest).user!.id;
+    const notifications = await notificationService.getAllNotifications(userId);
 
     return res.status(200).json({
       success: true,
@@ -42,7 +44,8 @@ const getNotifications = async (req: Request, res: Response, next: NextFunction)
 const markAsRead = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { id } = req.params;
-    const notification = await notificationService.markNotificationAsRead(id as string);
+    const userId = (req as AuthenticatedRequest).user!.id;
+    const notification = await notificationService.markNotificationAsRead(id as string, userId);
 
     return res.status(200).json({
       success: true,
@@ -56,7 +59,8 @@ const markAsRead = async (req: Request, res: Response, next: NextFunction) => {
 
 const getUnreadCount = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const count = await notificationService.getUnreadNotificationCount();
+    const userId = (req as AuthenticatedRequest).user!.id;
+    const count = await notificationService.getUnreadNotificationCount(userId);
 
     return res.status(200).json({
       success: true,

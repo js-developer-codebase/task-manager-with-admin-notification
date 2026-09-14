@@ -1,24 +1,73 @@
-import { Notification, INotification } from '../models/notification.model.js';
+import { Types } from 'mongoose';
+import { Notification, INotification, INotificationDTO } from '../models/notification.model.js';
 
 const create = async (data: { title: string; message: string }): Promise<INotification> => {
-  const notification = new Notification(data);
+  const notification = new Notification({
+    ...data,
+    readBy: [],
+  });
   return await notification.save();
 };
 
-const findAll = async (): Promise<INotification[]> => {
-  return await Notification.find().sort({ createdAt: -1 });
+const findAll = async (userId: string): Promise<INotificationDTO[]> => {
+  const userObjectId = Types.ObjectId.isValid(userId) ? new Types.ObjectId(userId) : null;
+
+  return await Notification.aggregate<INotificationDTO>([
+    { $sort: { createdAt: -1 } },
+    {
+      $project: {
+        _id: 1,
+        title: 1,
+        message: 1,
+        createdAt: 1,
+        updatedAt: 1,
+        isRead: userObjectId
+          ? { $in: [userObjectId, { $ifNull: ['$readBy', []] }] }
+          : false,
+      },
+    },
+  ]);
 };
 
-const markAsRead = async (id: string): Promise<INotification | null> => {
-  return await Notification.findByIdAndUpdate(
+const markAsRead = async (id: string, userId: string): Promise<INotificationDTO | null> => {
+  if (!Types.ObjectId.isValid(id)) {
+    return null;
+  }
+
+  const userObjectId = Types.ObjectId.isValid(userId) ? new Types.ObjectId(userId) : null;
+  if (!userObjectId) {
+    return null;
+  }
+
+  const notification = await Notification.findByIdAndUpdate(
     id,
-    { isRead: true },
+    { $addToSet: { readBy: userObjectId } },
     { new: true }
   );
+
+  if (!notification) {
+    return null;
+  }
+
+  return {
+    _id: notification._id,
+    title: notification.title,
+    message: notification.message,
+    isRead: true,
+    createdAt: notification.createdAt,
+    updatedAt: notification.updatedAt,
+  };
 };
 
-const getUnreadCount = async (): Promise<number> => {
-  return await Notification.countDocuments({ isRead: false });
+const getUnreadCount = async (userId: string): Promise<number> => {
+  const userObjectId = Types.ObjectId.isValid(userId) ? new Types.ObjectId(userId) : null;
+  if (!userObjectId) {
+    return 0;
+  }
+
+  return await Notification.countDocuments({
+    readBy: { $ne: userObjectId },
+  });
 };
 
 const notificationRepository = {

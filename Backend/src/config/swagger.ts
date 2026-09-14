@@ -332,7 +332,7 @@ const swaggerDocument = {
         },
       },
       get: {
-        summary: 'Get all notifications (stored in DB for online/offline persistence)',
+        summary: 'Get all notifications with user-specific read status',
         tags: ['Notifications'],
         security: [{ bearerAuth: [] }],
         responses: {
@@ -359,7 +359,7 @@ const swaggerDocument = {
     },
     '/api/notifications/unread-count': {
       get: {
-        summary: 'Get count of unread notifications',
+        summary: 'Get count of unread notifications for current user',
         tags: ['Notifications'],
         security: [{ bearerAuth: [] }],
         responses: {
@@ -373,7 +373,7 @@ const swaggerDocument = {
     },
     '/api/notifications/{id}/read': {
       patch: {
-        summary: 'Mark notification as read',
+        summary: 'Mark notification as read for current user',
         tags: ['Notifications'],
         security: [{ bearerAuth: [] }],
         parameters: [

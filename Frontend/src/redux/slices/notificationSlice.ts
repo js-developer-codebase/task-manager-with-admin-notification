@@ -53,6 +53,12 @@ const notificationSlice = createSlice({
     clearToast: (state) => {
       state.toast = null;
     },
+    clearNotifications: (state) => {
+      state.notifications = [];
+      state.unreadCount = 0;
+      state.toast = null;
+      state.loading = false;
+    },
     setNotificationLoading: (state, action: PayloadAction<boolean>) => {
       state.loading = action.payload;
     },
@@ -64,6 +70,7 @@ const {
   addNotification,
   markAsReadInList,
   clearToast,
+  clearNotifications,
   setNotificationLoading,
 } = notificationSlice.actions;
 
@@ -76,6 +83,7 @@ export {
   addNotification,
   markAsReadInList,
   clearToast,
+  clearNotifications,
   setNotificationLoading,
 };
 export default notificationReducer;

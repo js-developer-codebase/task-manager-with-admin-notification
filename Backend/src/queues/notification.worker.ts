@@ -13,15 +13,24 @@ const startNotificationWorker = () => {
       // 1. Save to MongoDB (ensures offline users receive it upon visiting)
       const savedNotification = await notificationRepository.create({ title, message });
 
+      const notificationPayload = {
+        _id: savedNotification._id,
+        title: savedNotification.title,
+        message: savedNotification.message,
+        isRead: false,
+        createdAt: savedNotification.createdAt,
+        updatedAt: savedNotification.updatedAt,
+      };
+
       // 2. Real-time push via Socket.io to all online users & admins
       try {
-        getIO().emit('new_notification', savedNotification);
+        getIO().emit('new_notification', notificationPayload);
         console.log(`[Socket.io] Real-time notification emitted: ${title}`);
       } catch (socketErr) {
         console.warn('[Socket.io] Socket emit skipped:', socketErr);
       }
 
-      return savedNotification;
+      return notificationPayload;
     },
     { connection: redisConfig }
   );

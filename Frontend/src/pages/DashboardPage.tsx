@@ -25,6 +25,7 @@ import {
 import {
   setNotifications,
   addNotification,
+  clearNotifications,
   type AppNotification,
 } from '../redux/slices/notificationSlice.js';
 
@@ -112,6 +113,7 @@ const DashboardPage = () => {
 
   const handleLogout = () => {
     dispatch(logout());
+    dispatch(clearNotifications());
     navigate('/login');
   };
 
