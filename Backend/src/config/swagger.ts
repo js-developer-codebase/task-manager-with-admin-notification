@@ -387,6 +387,22 @@ const swaggerDocument = {
         },
       },
     },
+    '/api/notifications/{id}': {
+      delete: {
+        summary: 'Delete notification for current user',
+        tags: ['Notifications'],
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          { name: 'id', in: 'path', required: true, schema: { type: 'string' } },
+        ],
+        responses: {
+          200: {
+            description: 'Notification deleted successfully',
+          },
+          404: { description: 'Notification not found' },
+        },
+      },
+    },
   },
 };
 

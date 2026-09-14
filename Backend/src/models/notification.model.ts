@@ -4,6 +4,7 @@ export interface INotification extends Document {
   title: string;
   message: string;
   readBy: Types.ObjectId[];
+  deletedBy: Types.ObjectId[];
   createdAt: Date;
   updatedAt: Date;
 }
@@ -34,14 +35,20 @@ const notificationSchema = new Schema<INotification>(
       ref: 'User',
       default: [],
     },
+    deletedBy: {
+      type: [Schema.Types.ObjectId],
+      ref: 'User',
+      default: [],
+    },
   },
   {
     timestamps: true,
   }
 );
 
-// Index for optimizing per-user unread count and queries
+// Indexes for optimizing per-user queries and counts
 notificationSchema.index({ readBy: 1 });
+notificationSchema.index({ deletedBy: 1 });
 
 const Notification = model<INotification>('Notification', notificationSchema);
 

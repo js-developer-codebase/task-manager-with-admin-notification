@@ -50,6 +50,15 @@ const notificationSlice = createSlice({
         state.unreadCount = Math.max(0, state.unreadCount - 1);
       }
     },
+    removeNotificationInList: (state, action: PayloadAction<string>) => {
+      const index = state.notifications.findIndex((n) => n._id === action.payload);
+      if (index !== -1) {
+        if (!state.notifications[index].isRead) {
+          state.unreadCount = Math.max(0, state.unreadCount - 1);
+        }
+        state.notifications.splice(index, 1);
+      }
+    },
     clearToast: (state) => {
       state.toast = null;
     },
@@ -69,6 +78,7 @@ const {
   setNotifications,
   addNotification,
   markAsReadInList,
+  removeNotificationInList,
   clearToast,
   clearNotifications,
   setNotificationLoading,
@@ -82,6 +92,7 @@ export {
   setNotifications,
   addNotification,
   markAsReadInList,
+  removeNotificationInList,
   clearToast,
   clearNotifications,
   setNotificationLoading,

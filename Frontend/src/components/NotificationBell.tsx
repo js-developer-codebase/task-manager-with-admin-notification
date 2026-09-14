@@ -1,6 +1,10 @@
 import { useState, useRef, useEffect } from 'react';
 import { useAppDispatch, useAppSelector } from '../redux/hooks.js';
-import { markAsReadInList, type AppNotification } from '../redux/slices/notificationSlice.js';
+import {
+  markAsReadInList,
+  removeNotificationInList,
+  type AppNotification,
+} from '../redux/slices/notificationSlice.js';
 import { api } from '../services/api.js';
 
 const NotificationBell = () => {
@@ -28,6 +32,16 @@ const NotificationBell = () => {
       dispatch(markAsReadInList(notification._id));
     } catch (err) {
       console.error('Failed to mark notification as read:', err);
+    }
+  };
+
+  const handleDeleteNotification = async (e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
+    try {
+      await api.deleteNotification(id);
+      dispatch(removeNotificationInList(id));
+    } catch (err) {
+      console.error('Failed to delete notification:', err);
     }
   };
 
@@ -88,29 +102,52 @@ const NotificationBell = () => {
                 <div
                   key={n._id}
                   onClick={() => handleMarkAsRead(n)}
-                  className={`cursor-pointer p-4 text-left transition-colors hover:bg-slate-50 ${
+                  className={`group relative cursor-pointer p-4 text-left transition-colors hover:bg-slate-50 ${
                     !n.isRead ? 'bg-blue-50/40' : 'bg-white'
                   }`}
                 >
                   <div className="flex items-start justify-between gap-2">
-                    <div className="flex items-center gap-1.5">
+                    <div className="flex items-center gap-1.5 flex-1 min-w-0">
                       {!n.isRead && (
                         <span className="h-2 w-2 rounded-full bg-blue-600 shrink-0" />
                       )}
                       <h5
-                        className={`text-sm ${
+                        className={`text-sm truncate ${
                           !n.isRead ? 'font-semibold text-slate-900' : 'font-medium text-slate-700'
                         }`}
                       >
                         {n.title}
                       </h5>
                     </div>
-                    <span className="text-[10px] text-slate-400 shrink-0 whitespace-nowrap">
-                      {new Date(n.createdAt).toLocaleTimeString([], {
-                        hour: '2-digit',
-                        minute: '2-digit',
-                      })}
-                    </span>
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <span className="text-[10px] text-slate-400 whitespace-nowrap">
+                        {new Date(n.createdAt).toLocaleTimeString([], {
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        })}
+                      </span>
+                      <button
+                        onClick={(e) => handleDeleteNotification(e, n._id)}
+                        className="cursor-pointer rounded p-1 text-slate-400 hover:bg-red-50 hover:text-red-600 transition-colors"
+                        title="Delete notification"
+                        aria-label="Delete notification"
+                      >
+                        <svg
+                          className="h-3.5 w-3.5"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                          xmlns="http://www.w3.org/2000/svg"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth="2"
+                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                          />
+                        </svg>
+                      </button>
+                    </div>
                   </div>
                   <p className="mt-1 text-xs text-slate-600 line-clamp-2">{n.message}</p>
                 </div>

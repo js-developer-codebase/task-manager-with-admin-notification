@@ -71,10 +71,26 @@ const getUnreadCount = async (req: Request, res: Response, next: NextFunction) =
   }
 };
 
+const deleteNotification = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { id } = req.params;
+    const userId = (req as AuthenticatedRequest).user!.id;
+    const result = await notificationService.deleteNotification(id as string, userId);
+
+    return res.status(200).json({
+      success: true,
+      message: result.message,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 const notificationController = {
   createNotification,
   getNotifications,
   markAsRead,
+  deleteNotification,
   getUnreadCount,
 };
 
@@ -83,6 +99,7 @@ export {
   createNotification,
   getNotifications,
   markAsRead,
+  deleteNotification,
   getUnreadCount,
 };
 export default notificationController;

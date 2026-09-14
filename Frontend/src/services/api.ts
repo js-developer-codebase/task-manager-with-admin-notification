@@ -93,6 +93,12 @@ const markNotificationAsRead = (id: string) => {
   });
 };
 
+const deleteNotification = (id: string) => {
+  return apiRequest(`/notifications/${id}`, {
+    method: 'DELETE',
+  });
+};
+
 const sendNotification = (title: string, message: string) => {
   return apiRequest('/notifications', {
     method: 'POST',
@@ -112,6 +118,7 @@ const api = {
   getNotifications,
   getUnreadNotificationCount,
   markNotificationAsRead,
+  deleteNotification,
   sendNotification,
 };
 
@@ -128,6 +135,7 @@ export {
   getNotifications,
   getUnreadNotificationCount,
   markNotificationAsRead,
+  deleteNotification,
   sendNotification,
 };
 export default api;

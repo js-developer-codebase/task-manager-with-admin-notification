@@ -10,10 +10,11 @@ router.use(authenticate);
 // Only Admins can create and broadcast notifications
 router.post('/', authorizeRoles('admin'), notificationController.createNotification);
 
-// All authenticated users can view and mark notifications as read
+// All authenticated users can view, mark as read, and delete notifications (for themselves)
 router.get('/', notificationController.getNotifications);
 router.get('/unread-count', notificationController.getUnreadCount);
 router.patch('/:id/read', notificationController.markAsRead);
+router.delete('/:id', notificationController.deleteNotification);
 
 export { router as notificationRouter };
 export default router;

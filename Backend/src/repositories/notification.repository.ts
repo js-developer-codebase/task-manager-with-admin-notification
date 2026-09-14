@@ -5,6 +5,7 @@ const create = async (data: { title: string; message: string }): Promise<INotifi
   const notification = new Notification({
     ...data,
     readBy: [],
+    deletedBy: [],
   });
   return await notification.save();
 };
@@ -12,7 +13,17 @@ const create = async (data: { title: string; message: string }): Promise<INotifi
 const findAll = async (userId: string): Promise<INotificationDTO[]> => {
   const userObjectId = Types.ObjectId.isValid(userId) ? new Types.ObjectId(userId) : null;
 
-  return await Notification.aggregate<INotificationDTO>([
+  const pipeline: any[] = [];
+
+  if (userObjectId) {
+    pipeline.push({
+      $match: {
+        deletedBy: { $ne: userObjectId },
+      },
+    });
+  }
+
+  pipeline.push(
     { $sort: { createdAt: -1 } },
     {
       $project: {
@@ -25,8 +36,10 @@ const findAll = async (userId: string): Promise<INotificationDTO[]> => {
           ? { $in: [userObjectId, { $ifNull: ['$readBy', []] }] }
           : false,
       },
-    },
-  ]);
+    }
+  );
+
+  return await Notification.aggregate<INotificationDTO>(pipeline);
 };
 
 const markAsRead = async (id: string, userId: string): Promise<INotificationDTO | null> => {
@@ -59,6 +72,25 @@ const markAsRead = async (id: string, userId: string): Promise<INotificationDTO 
   };
 };
 
+const deleteForUser = async (id: string, userId: string): Promise<boolean> => {
+  if (!Types.ObjectId.isValid(id)) {
+    return false;
+  }
+
+  const userObjectId = Types.ObjectId.isValid(userId) ? new Types.ObjectId(userId) : null;
+  if (!userObjectId) {
+    return false;
+  }
+
+  const updated = await Notification.findByIdAndUpdate(
+    id,
+    { $addToSet: { deletedBy: userObjectId } },
+    { new: true }
+  );
+
+  return !!updated;
+};
+
 const getUnreadCount = async (userId: string): Promise<number> => {
   const userObjectId = Types.ObjectId.isValid(userId) ? new Types.ObjectId(userId) : null;
   if (!userObjectId) {
@@ -67,6 +99,7 @@ const getUnreadCount = async (userId: string): Promise<number> => {
 
   return await Notification.countDocuments({
     readBy: { $ne: userObjectId },
+    deletedBy: { $ne: userObjectId },
   });
 };
 
@@ -74,6 +107,7 @@ const notificationRepository = {
   create,
   findAll,
   markAsRead,
+  deleteForUser,
   getUnreadCount,
 };
 

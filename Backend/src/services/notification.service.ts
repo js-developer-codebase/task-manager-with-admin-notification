@@ -32,10 +32,19 @@ const getUnreadNotificationCount = async (userId: string) => {
   return await notificationRepository.getUnreadCount(userId);
 };
 
+const deleteNotification = async (id: string, userId: string) => {
+  const success = await notificationRepository.deleteForUser(id, userId);
+  if (!success) {
+    throw new AppError(ERROR_CODES.NOT_FOUND, 'Notification not found');
+  }
+  return { message: 'Notification deleted successfully' };
+};
+
 const notificationService = {
   sendNotification,
   getAllNotifications,
   markNotificationAsRead,
+  deleteNotification,
   getUnreadNotificationCount,
 };
 
